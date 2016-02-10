@@ -1,0 +1,42 @@
+permalink   : /:categories/:year/:title/
+markdown    : kramdown
+highlighter : pygments
+
+paginate: 2 #6
+comments: true
+paginate_path: "/page/:num"
+
+source: source
+destination: _site
+sass:
+  sass_dir: _scss
+  style: compressed
+
+cover: /assets/images/default-cover.png
+
+# site title, description, meta_description, meta_keywords
+# Details for the RSS feed generator
+name: Websitedev.xyz
+title: WebsiteDev.XYZ
+description: "Web dev and devops blog"
+keywords: "dev, devops, docker, nginx, passenger, rails, nodejs, web"
+url: http://websitedev.xyz
+baseurl: ""
+domain_name: websitedev.xyz
+# google_analytics: UA-52446115-1
+repo: http://github.com/sitecoxyz/websitedev.xyz
+disqus_shortname: "websitedevxyz"
+
+author:
+  name      : Lou Calderone
+  image     : /assets/images/author.jpg
+  email     : louis.calderone@gmail.com
+  url       : http://loucal.net
+  facebook  : http://facebook.com/loucalnet
+  twitter   : http://twitter.com/loucalnet
+  instagram : http://instagram.com/couriercray
+  github    : http://github.com/loucal
+  linkedin  : http://linkedin.com/in/lou-calderone-4294035
+  bio       : ""
+
+exclude: ["gulp", "node_modules", "bower", "bower_components", "config.rb", "src", "Gemfile", "Gemfile.lock", ".rvmrc", ".rbenv-version", "package.json", "gulpfile.js", "README.md", "Rakefile", "changelog.md"]
