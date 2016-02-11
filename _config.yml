@@ -16,7 +16,7 @@ cover: /assets/images/default-cover.png
 
 # site title, description, meta_description, meta_keywords
 # Details for the RSS feed generator
-name: Websitedev.xyz
+name: websitedev.xyz
 title: WebsiteDev.XYZ
 description: "Web dev and devops blog"
 keywords: "dev, devops, docker, nginx, passenger, rails, nodejs, web"
@@ -40,3 +40,4 @@ author:
   bio       : ""
 
 exclude: ["gulp", "node_modules", "bower", "bower_components", "config.rb", "src", "Gemfile", "Gemfile.lock", ".rvmrc", ".rbenv-version", "package.json", "gulpfile.js", "README.md", "Rakefile", "changelog.md"]
+colors: ['393950','FFCD89', 'E6F2A0', 'DAEDAF', 'CCE9BC']
