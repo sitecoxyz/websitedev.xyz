@@ -1,0 +1,223 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>WebsiteDev.XYZ</title>
+    <description>Web dev and devops blog</description>
+    <link>http://websitedev.xyz/</link>
+    <atom:link href="http://websitedev.xyz/feed.xml" rel="self" type="application/rss+xml"/>
+    <pubDate>Wed, 30 Mar 2016 13:42:25 -0400</pubDate>
+    <lastBuildDate>Wed, 30 Mar 2016 13:42:25 -0400</lastBuildDate>
+    <generator>Jekyll v2.5.3</generator>
+    
+      <item>
+        <title>Upgrading from Postgres 9.4 to 9.5 when upgrading to Ubuntu 16.04 Xenial Xerus</title>
+        <description>&lt;p&gt;This is how I moved my databases from my postgresql 9.4 cluster to 9.5 when upgrading from 15.10 to 16.04 Xenial Xerus&lt;/p&gt;
+
+&lt;p&gt;&lt;br /&gt;&lt;/p&gt;
+
+&lt;h3 id=&quot;step-1&quot;&gt;Step 1&lt;/h3&gt;
+
+&lt;h4 id=&quot;switch-to-the-postgres-user&quot;&gt;switch to the postgres user&lt;/h4&gt;
+
+&lt;p&gt;from &lt;a href=&quot;https://docs.docker.com/engine/installation/ubuntulinux/&quot;&gt;https://docs.docker.com/engine/installation/ubuntulinux/&lt;/a&gt;&lt;/p&gt;
+
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-sh&quot; data-lang=&quot;sh&quot;&gt;sudo su - postgres&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+
+&lt;p&gt;as long as you use the - option for su you should be in the postgres home folder which is writable, if not you can just do this all in /tmp&lt;/p&gt;
+
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-sh&quot; data-lang=&quot;sh&quot;&gt;&lt;span class=&quot;nb&quot;&gt;cd&lt;/span&gt; /tmp&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+
+&lt;p&gt;now the important stuff&lt;/p&gt;
+
+&lt;h3 id=&quot;step-2&quot;&gt;Step 2&lt;/h3&gt;
+
+&lt;h4 id=&quot;run-the-pgupgrade-command&quot;&gt;Run the pg_upgrade command&lt;/h4&gt;
+
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-sh&quot; data-lang=&quot;sh&quot;&gt;/usr/lib/postgresql/9.5/bin/pg_upgrade &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+-b /usr/lib/postgresql/9.4/bin/ &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+-B /usr/lib/postgresql/9.5/bin/ &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+-d /var/lib/postgresql/9.4/main &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+-D /var/lib/postgresql/9.5/main &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+-o &lt;span class=&quot;s1&quot;&gt;&amp;#39; -c config_file=/etc/postgresql/9.4/main/postgresql.conf&amp;#39;&lt;/span&gt; &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+-O &lt;span class=&quot;s1&quot;&gt;&amp;#39; -c config_file=/etc/postgresql/9.5/main/postgresql.conf&amp;#39;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+
+&lt;p&gt;at some point this failed for me and I had to move both the old and new postmaster pid files to backups&lt;/p&gt;
+
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-sh&quot; data-lang=&quot;sh&quot;&gt;mv /var/lib/postgresql/9.4/main/postmaster.pid /var/lib/postgresql/9.4/main/postmaster.pid.bak&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-sh&quot; data-lang=&quot;sh&quot;&gt;mv /var/lib/postgresql/9.5/main/postmaster.pid /var/lib/postgresql/9.5/main/postmaster.pid.bak&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+
+&lt;p&gt;Then, I got another error because I had moved the postmaster.pid files :)
+Instead of moving them back I first simply tried re-running the /usr/lib/postgresql/9.5/bin/pg_upgrade command which was successful.&lt;/p&gt;
+
+&lt;h3 id=&quot;step-3&quot;&gt;Step 3&lt;/h3&gt;
+
+&lt;h4 id=&quot;finishing-touches&quot;&gt;Finishing touches&lt;/h4&gt;
+
+&lt;p&gt;Next, I tried to run&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-sh&quot; data-lang=&quot;sh&quot;&gt;./analyze_new_cluster.sh&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;but I needed to&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-sh&quot; data-lang=&quot;sh&quot;&gt;&lt;span class=&quot;nb&quot;&gt;exit&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;the postgres user first and then start postgres with systemctl&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-sh&quot; data-lang=&quot;sh&quot;&gt;sudo systemctl start postgresql&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+
+&lt;p&gt;Now just go back to your postgres user and the folder you ran the commands and run (or re-run)&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-sh&quot; data-lang=&quot;sh&quot;&gt;./analyze_new_cluster.sh&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;which should now be successful.&lt;/p&gt;
+
+&lt;p&gt;&lt;br /&gt;&lt;/p&gt;
+</description>
+        <pubDate>Mon, 28 Mar 2016 09:27:53 -0400</pubDate>
+        <link>http://websitedev.xyz/ubuntu-16-04-upgrading-postgres-9-4-to-9-5</link>
+        <guid isPermaLink="true">http://websitedev.xyz/ubuntu-16-04-upgrading-postgres-9-4-to-9-5</guid>
+        
+        
+        <category>devops,</category>
+        
+        <category>ubuntu,</category>
+        
+        <category>postgres,</category>
+        
+        <category>db</category>
+        
+      </item>
+    
+      <item>
+        <title>Multiple SSL Rails apps on one VPS with Docker and Letsencrypt</title>
+        <description>&lt;p&gt;This is a step by step guide to setting up an Ubuntu 14.04 VPS from scratch to serve multiple apps quickly and easily, with SSL automatically set up.  We will be using nginx, docker, and letsencrypt and we will even throw in a Postgres container to house our databases.&lt;/p&gt;
+
+&lt;p&gt;&lt;br /&gt;&lt;/p&gt;
+
+&lt;h3 id=&quot;step-1&quot;&gt;Step 1&lt;/h3&gt;
+
+&lt;h4 id=&quot;install-docker&quot;&gt;Install Docker&lt;/h4&gt;
+
+&lt;p&gt;from &lt;a href=&quot;https://docs.docker.com/engine/installation/ubuntulinux/&quot;&gt;https://docs.docker.com/engine/installation/ubuntulinux/&lt;/a&gt;&lt;/p&gt;
+
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-sh&quot; data-lang=&quot;sh&quot;&gt;sudo apt-key adv --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys 58118E89F3A912897C070ADBF76221572C52609D&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+
+&lt;p&gt;open up the .list file&lt;/p&gt;
+
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-sh&quot; data-lang=&quot;sh&quot;&gt;sudo vi /etc/apt/sources.list.d/docker.list&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+
+&lt;p&gt;add the line&lt;/p&gt;
+
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-debsources&quot; data-lang=&quot;debsources&quot;&gt;&lt;span class=&quot;k&quot;&gt;deb&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;https://apt.dockerproject.org/repo&lt;/span&gt; &lt;span class=&quot;kp&quot;&gt;ubuntu-trusty&lt;/span&gt; &lt;span class=&quot;kp&quot;&gt;main&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+
+&lt;p&gt;save and close&lt;/p&gt;
+
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-sh&quot; data-lang=&quot;sh&quot;&gt;sudo apt-get update
+sudo apt-get install linux-image-extra-&lt;span class=&quot;k&quot;&gt;$(&lt;/span&gt;uname -r&lt;span class=&quot;k&quot;&gt;)&lt;/span&gt;
+sudo apt-get install docker-engine&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+
+&lt;p&gt;&lt;br /&gt;&lt;/p&gt;
+
+&lt;h3 id=&quot;step-2&quot;&gt;Step 2&lt;/h3&gt;
+
+&lt;h4 id=&quot;set-up-postgres-container&quot;&gt;Set up Postgres container&lt;/h4&gt;
+
+&lt;p&gt;This will hold the postgres databases for all apps on the server, just pass in the password.&lt;/p&gt;
+
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-sh&quot; data-lang=&quot;sh&quot;&gt;sudo docker run --restart&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;always --name postgres -e &lt;span class=&quot;nv&quot;&gt;POSTGRES_PASSWORD&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;pUbl1Shthis -d postgres&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+
+&lt;p&gt;&lt;br /&gt;&lt;/p&gt;
+
+&lt;h3 id=&quot;step-3&quot;&gt;Step 3&lt;/h3&gt;
+
+&lt;h4 id=&quot;set-up-nginx-proxy-container&quot;&gt;Set up Nginx proxy container&lt;/h4&gt;
+
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-sh&quot; data-lang=&quot;sh&quot;&gt;sudo docker run -d -p 80:80 -p 443:443 &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+    --name nginx-proxy &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+    -v /home/ubuntu/certs:/etc/nginx/certs:ro &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+    -v /etc/nginx/vhost.d &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+    -v /usr/share/nginx/html &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+    -v /var/run/docker.sock:/tmp/docker.sock:ro &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+    jwilder/nginx-proxy&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+
+&lt;p&gt;&lt;br /&gt;&lt;/p&gt;
+
+&lt;h3 id=&quot;step-4&quot;&gt;Step 4&lt;/h3&gt;
+
+&lt;h4 id=&quot;set-up-letsencrypt-container&quot;&gt;Set up letsencrypt container&lt;/h4&gt;
+
+&lt;p&gt;Here we are using the excellent &lt;a href=&quot;https://github.com/JrCs/docker-letsencrypt-nginx-proxy-companion&quot;&gt;https://github.com/JrCs/docker-letsencrypt-nginx-proxy-companion&lt;/a&gt;&lt;/p&gt;
+
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-sh&quot; data-lang=&quot;sh&quot;&gt;sudo docker run -d &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+    --name letsencrypt &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+    -v /home/ubuntu/certs:/etc/nginx/certs:rw &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+    --volumes-from nginx-proxy &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+    -v /var/run/docker.sock:/var/run/docker.sock:ro &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+    jrcs/letsencrypt-nginx-proxy-companion&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+
+&lt;p&gt;Yay! SSL!&lt;/p&gt;
+
+&lt;p&gt;&lt;br /&gt;&lt;/p&gt;
+
+&lt;h3 id=&quot;step-5&quot;&gt;Step 5&lt;/h3&gt;
+
+&lt;h4 id=&quot;launch-your-apps&quot;&gt;Launch your apps&lt;/h4&gt;
+
+&lt;h4 id=&quot;sample-dockerfile&quot;&gt;Sample Dockerfile&lt;/h4&gt;
+
+&lt;p&gt;from &lt;a href=&quot;https://libertyseeds.ca/2015/09/04/Deploy-multiple-Rails-apps-with-Passenger-Nginx-and-Docker/&quot;&gt;https://libertyseeds.ca/2015/09/04/Deploy-multiple-Rails-apps-with-Passenger-Nginx-and-Docker/&lt;/a&gt;&lt;/p&gt;
+
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-docker&quot; data-lang=&quot;docker&quot;&gt;&lt;span class=&quot;k&quot;&gt;FROM&lt;/span&gt; phusion/passenger-ruby22:latest
+&lt;span class=&quot;k&quot;&gt;MAINTAINER&lt;/span&gt; Some Groovy Cat &lt;span class=&quot;s2&quot;&gt;&amp;quot;hepcat@example.com&amp;quot;&lt;/span&gt;
+
+&lt;span class=&quot;c&quot;&gt;# Set correct environment variables.&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;ENV&lt;/span&gt; HOME /root
+&lt;span class=&quot;k&quot;&gt;ENV&lt;/span&gt; RAILS_ENV production
+
+&lt;span class=&quot;c&quot;&gt;# Use baseimage-docker&amp;#39;s init process.&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;CMD&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&amp;quot;/sbin/my_init&amp;quot;&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;]&lt;/span&gt;
+
+&lt;span class=&quot;c&quot;&gt;# Start Nginx and Passenger&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;EXPOSE&lt;/span&gt; &lt;span class=&quot;m&quot;&gt;80&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;RUN&lt;/span&gt; rm -f /etc/service/nginx/down
+
+&lt;span class=&quot;c&quot;&gt;# Configure Nginx&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;RUN&lt;/span&gt; rm /etc/nginx/sites-enabled/default
+&lt;span class=&quot;k&quot;&gt;ADD&lt;/span&gt; docker/my-app.conf /etc/nginx/sites-enabled/my-app.conf
+&lt;span class=&quot;k&quot;&gt;ADD&lt;/span&gt; docker/postgres-env.conf /etc/nginx/main.d/postgres-env.conf
+
+&lt;span class=&quot;c&quot;&gt;# Install the app&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;ADD&lt;/span&gt; . /home/app/my-app
+&lt;span class=&quot;k&quot;&gt;WORKDIR&lt;/span&gt; /home/app/my-app
+&lt;span class=&quot;k&quot;&gt;RUN&lt;/span&gt; chown -R app:app /home/app/my-app
+&lt;span class=&quot;k&quot;&gt;RUN&lt;/span&gt; sudo -u app bundle install --deployment
+
+&lt;span class=&quot;c&quot;&gt;# TODO: figure out how to install `node` modules without `sudo`&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;RUN&lt;/span&gt; sudo npm install
+
+&lt;span class=&quot;k&quot;&gt;RUN&lt;/span&gt; sudo -u app &lt;span class=&quot;nv&quot;&gt;RAILS_ENV&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;production rake assets:precompile
+
+&lt;span class=&quot;c&quot;&gt;# Clean up APT when done.&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;RUN&lt;/span&gt; apt-get clean &lt;span class=&quot;o&quot;&gt;&amp;amp;&amp;amp;&lt;/span&gt; rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+
+&lt;p&gt;Be sure to run the docker container with the correct VIRTUAL_HOST, LETSENCRYPT_HOST, and LETSENCRYPT_EMAIL environment variables like so:&lt;/p&gt;
+
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-sh&quot; data-lang=&quot;sh&quot;&gt;sudo docker run --name my-app -v /home/ubuntu/my-app -e &lt;span class=&quot;nv&quot;&gt;VIRTUAL_HOST&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&amp;quot;my-app.com&amp;quot;&lt;/span&gt; -e &lt;span class=&quot;nv&quot;&gt;LETSENCRYPT_HOST&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&amp;quot;my-app.com&amp;quot;&lt;/span&gt; -e &lt;span class=&quot;nv&quot;&gt;LETSENCRYPT_EMAIL&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&amp;quot;me@example.com&amp;quot;&lt;/span&gt; --link postgres:postgres -d my-app&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+
+&lt;p&gt;The &lt;code&gt;-v /home/ubuntu/my-app&lt;/code&gt; will allow the app folder to persist in a volume container so you can restart the container after updates without losing changes.&lt;/p&gt;
+</description>
+        <pubDate>Wed, 10 Feb 2016 07:47:53 -0500</pubDate>
+        <link>http://websitedev.xyz/multiple-ssl-rails-apps-on-one-vps-with-docker-letsencrypt</link>
+        <guid isPermaLink="true">http://websitedev.xyz/multiple-ssl-rails-apps-on-one-vps-with-docker-letsencrypt</guid>
+        
+        
+        <category>devops,</category>
+        
+        <category>docker,</category>
+        
+        <category>deployment,</category>
+        
+        <category>aws,</category>
+        
+        <category>passenger,</category>
+        
+        <category>nginx</category>
+        
+      </item>
+    
+  </channel>
+</rss>
