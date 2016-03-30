@@ -23,7 +23,7 @@ keywords: "dev, devops, docker, nginx, passenger, rails, nodejs, web"
 url: http://websitedev.xyz
 baseurl: ""
 domain_name: websitedev.xyz
-# google_analytics: UA-52446115-1
+google_analytics: UA-71393500-5
 repo: http://github.com/sitecoxyz/websitedev.xyz
 disqus_shortname: "websitedevxyz"
 

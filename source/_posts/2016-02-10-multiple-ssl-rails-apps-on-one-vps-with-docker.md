@@ -1,7 +1,7 @@
 ---
 layout: post
-title: "Multiple SSL Rails apps on one VPS with Docker"
-permalink: multiple-ssl-rails-apps-on-one-vpn-with-docker
+title: "Multiple SSL Rails apps on one VPS with Docker and Letsencrypt"
+permalink: multiple-ssl-rails-apps-on-one-vps-with-docker-letsencrypt
 date: 2016-02-10 12:47:53
 comments: true
 description: "Multiple SSL Rails apps on one Virtual Private Server with Docker"
@@ -29,8 +29,8 @@ add the line
 save and close
 
 {% highlight sh %}
-apt-get update
-sudo apt-get install linux-image-extra-$(uname -r)sudo apt-get install linux-image-extra-$(uname -r)
+sudo apt-get update
+sudo apt-get install linux-image-extra-$(uname -r)
 sudo apt-get install docker-engine
 {% endhighlight %}
 <br />
@@ -47,7 +47,15 @@ This will hold the postgres databases for all apps on the server, just pass in t
 
 #### Set up Nginx proxy container
 
-{% highlight sh %}sudo docker run --restart=always --name nginx-proxy -d -p 80:80 -p 443:443 -v /home/ubuntu/certs:/etc/nginx/certs -v /var/run/docker.sock:/tmp/docker.sock:ro jwilder/nginx-proxy{% endhighlight %}
+{% highlight sh %}
+sudo docker run -d -p 80:80 -p 443:443 \
+    --name nginx-proxy \
+    -v /home/ubuntu/certs:/etc/nginx/certs:ro \
+    -v /etc/nginx/vhost.d \
+    -v /usr/share/nginx/html \
+    -v /var/run/docker.sock:/tmp/docker.sock:ro \
+    jwilder/nginx-proxy
+{% endhighlight %}
 <br />
 
 ### Step 4
@@ -56,7 +64,14 @@ This will hold the postgres databases for all apps on the server, just pass in t
 
 Here we are using the excellent <https://github.com/JrCs/docker-letsencrypt-nginx-proxy-companion>
 
-{% highlight sh %}sudo docker run --name letsencrypt -d -v /home/ubuntu/certs:/etc/nginx/certs:rw --volumes-from nginx-proxy -v /var/run/docker.sock:/var/run/docker.sock:ro jrcs/letsencrypt-nginx-proxy-companion{% endhighlight %}
+{% highlight sh %}
+sudo docker run -d \
+    --name letsencrypt \
+    -v /home/ubuntu/certs:/etc/nginx/certs:rw \
+    --volumes-from nginx-proxy \
+    -v /var/run/docker.sock:/var/run/docker.sock:ro \
+    jrcs/letsencrypt-nginx-proxy-companion
+{% endhighlight %}
 
 Yay! SSL!
 
@@ -104,3 +119,9 @@ RUN sudo -u app RAILS_ENV=production rake assets:precompile
 # Clean up APT when done.
 RUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 {% endhighlight %}
+
+Be sure to run the docker container with the correct VIRTUAL_HOST, LETSENCRYPT_HOST, and LETSENCRYPT_EMAIL environment variables like so:
+
+{% highlight sh %}sudo docker run --name my-app -v /home/ubuntu/my-app -e VIRTUAL_HOST="my-app.com" -e LETSENCRYPT_HOST="my-app.com" -e LETSENCRYPT_EMAIL="me@example.com" --link postgres:postgres -d my-app {% endhighlight %}
+
+The `-v /home/ubuntu/my-app` will allow the app folder to persist in a volume container so you can restart the container after updates without losing changes.
