@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="HandheldFriendly" content="True">
+<meta name="MobileOptimized" content="320">
+<meta name="theme-color" content="#2ecc71">
+<title> Multiple SSL Rails apps on one VPS with Docker and Letsencrypt | WebsiteDev.XYZ</title>
+<meta name="description" content="Multiple SSL Rails apps on one Virtual Private Server with Docker">
+<meta name="keywords" content="">
+<link rel="stylesheet" href="/css/main.css">
+<link rel="canonical" href="http://websitedev.xyz/multiple-ssl-rails-apps-on-one-vps-with-docker-letsencrypt">
+<link rel="alternate" type="application/rss+xml" title="WebsiteDev.XYZ" href="http://websitedev.xyz/feed.xml" />
+<script type="text/javascript">
+var _gaq = _gaq || [];
+_gaq.push(['_setAccount', 'UA-71393500-5']);
+_gaq.push(['_trackPageview']);
+(function() {
+  var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+  ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+  var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+})();
+</script>
+<script>base_url = "";</script>
+  </head>
+  <body class="single">
+    <main class="main-container">
+        <header class="site-header">
+  <div class="container txt-center">
+    <a href="#" class="nav-toogle js-menu-trigger sliding-panel-button">
+      <span></span>
+      <span></span>
+      <span></span>
+    </a>
+    <nav class="js-menu sliding-panel-content">
+      <ul>
+        <li><a href="/">home</a></li>
+        <li><a href="/about">about</a></li>
+        <li><a href="http://loucal.net/about" target="_blank">the author</a></li>
+        <li><a href="http://github.com/sitecoxyz/websitedev.xyz" target="_blank">Download</a></li>
+        <li><a href="/feed.xml" target="_blank"><i class="icon icon-feed"></i> feed</a></li>
+      </ul>
+    </nav>
+    <div class="js-menu-screen sliding-panel-fade-screen"></div>
+    <a href="/" class="author-thumb dot">
+      <img src="/images/author.jpg" alt="Author thumbnail" class="dot">
+    </a>
+      <h1 class="post-title">Multiple SSL Rails apps on one VPS with Docker and Letsencrypt</h1>
+      <p class="post-meta">Feb 10, 2016</p>
+  </div>
+</header>
+        <section class="main-content">
+          <article class="post">
+  <div class="post-content container">
+    <p>This is a step by step guide to setting up an Ubuntu 14.04 VPS from scratch to serve multiple apps quickly and easily, with SSL automatically set up.  We will be using nginx, docker, and letsencrypt and we will even throw in a Postgres container to house our databases.</p>
+<p><br /></p>
+<h3 id="step-1">Step 1</h3>
+<h4 id="install-docker">Install Docker</h4>
+<p>from <a href="https://docs.docker.com/engine/installation/ubuntulinux/">https://docs.docker.com/engine/installation/ubuntulinux/</a></p>
+<div class="highlight"><pre><code class="language-sh" data-lang="sh">sudo apt-key adv --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys 58118E89F3A912897C070ADBF76221572C52609D</code></pre></div>
+<p>open up the .list file</p>
+<div class="highlight"><pre><code class="language-sh" data-lang="sh">sudo vi /etc/apt/sources.list.d/docker.list</code></pre></div>
+<p>add the line</p>
+<div class="highlight"><pre><code class="language-debsources" data-lang="debsources"><span class="k">deb</span> <span class="s">https://apt.dockerproject.org/repo</span> <span class="kp">ubuntu-trusty</span> <span class="kp">main</span></code></pre></div>
+<p>save and close</p>
+<div class="highlight"><pre><code class="language-sh" data-lang="sh">sudo apt-get update
+sudo apt-get install linux-image-extra-<span class="k">$(</span>uname -r<span class="k">)</span>
+sudo apt-get install docker-engine</code></pre></div>
+<p><br /></p>
+<h3 id="step-2">Step 2</h3>
+<h4 id="set-up-postgres-container">Set up Postgres container</h4>
+<p>This will hold the postgres databases for all apps on the server, just pass in the password.</p>
+<div class="highlight"><pre><code class="language-sh" data-lang="sh">sudo docker run --restart<span class="o">=</span>always --name postgres -e <span class="nv">POSTGRES_PASSWORD</span><span class="o">=</span>pUbl1Shthis -d postgres</code></pre></div>
+<p><br /></p>
+<h3 id="step-3">Step 3</h3>
+<h4 id="set-up-nginx-proxy-container">Set up Nginx proxy container</h4>
+<div class="highlight"><pre><code class="language-sh" data-lang="sh">sudo docker run -d -p 80:80 -p 443:443 <span class="se">\</span>
+    --name nginx-proxy <span class="se">\</span>
+    -v /home/ubuntu/certs:/etc/nginx/certs:ro <span class="se">\</span>
+    -v /etc/nginx/vhost.d <span class="se">\</span>
+    -v /usr/share/nginx/html <span class="se">\</span>
+    -v /var/run/docker.sock:/tmp/docker.sock:ro <span class="se">\</span>
+    jwilder/nginx-proxy</code></pre></div>
+<p><br /></p>
+<h3 id="step-4">Step 4</h3>
+<h4 id="set-up-letsencrypt-container">Set up letsencrypt container</h4>
+<p>Here we are using the excellent <a href="https://github.com/JrCs/docker-letsencrypt-nginx-proxy-companion">https://github.com/JrCs/docker-letsencrypt-nginx-proxy-companion</a></p>
+<div class="highlight"><pre><code class="language-sh" data-lang="sh">sudo docker run -d <span class="se">\</span>
+    --name letsencrypt <span class="se">\</span>
+    -v /home/ubuntu/certs:/etc/nginx/certs:rw <span class="se">\</span>
+    --volumes-from nginx-proxy <span class="se">\</span>
+    -v /var/run/docker.sock:/var/run/docker.sock:ro <span class="se">\</span>
+    jrcs/letsencrypt-nginx-proxy-companion</code></pre></div>
+<p>Yay! SSL!</p>
+<p><br /></p>
+<h3 id="step-5">Step 5</h3>
+<h4 id="launch-your-apps">Launch your apps</h4>
+<h4 id="sample-dockerfile">Sample Dockerfile</h4>
+<p>from <a href="https://libertyseeds.ca/2015/09/04/Deploy-multiple-Rails-apps-with-Passenger-Nginx-and-Docker/">https://libertyseeds.ca/2015/09/04/Deploy-multiple-Rails-apps-with-Passenger-Nginx-and-Docker/</a></p>
+<div class="highlight"><pre><code class="language-docker" data-lang="docker"><span class="k">FROM</span> phusion/passenger-ruby22:latest
+<span class="k">MAINTAINER</span> Some Groovy Cat <span class="s2">&quot;hepcat@example.com&quot;</span>
+<span class="c"># Set correct environment variables.</span>
+<span class="k">ENV</span> HOME /root
+<span class="k">ENV</span> RAILS_ENV production
+<span class="c"># Use baseimage-docker&#39;s init process.</span>
+<span class="k">CMD</span> <span class="o">[</span><span class="s2">&quot;/sbin/my_init&quot;</span><span class="o">]</span>
+<span class="c"># Start Nginx and Passenger</span>
+<span class="k">EXPOSE</span> <span class="m">80</span>
+<span class="k">RUN</span> rm -f /etc/service/nginx/down
+<span class="c"># Configure Nginx</span>
+<span class="k">RUN</span> rm /etc/nginx/sites-enabled/default
+<span class="k">ADD</span> docker/my-app.conf /etc/nginx/sites-enabled/my-app.conf
+<span class="k">ADD</span> docker/postgres-env.conf /etc/nginx/main.d/postgres-env.conf
+<span class="c"># Install the app</span>
+<span class="k">ADD</span> . /home/app/my-app
+<span class="k">WORKDIR</span> /home/app/my-app
+<span class="k">RUN</span> chown -R app:app /home/app/my-app
+<span class="k">RUN</span> sudo -u app bundle install --deployment
+<span class="c"># TODO: figure out how to install `node` modules without `sudo`</span>
+<span class="k">RUN</span> sudo npm install
+<span class="k">RUN</span> sudo -u app <span class="nv">RAILS_ENV</span><span class="o">=</span>production rake assets:precompile
+<span class="c"># Clean up APT when done.</span>
+<span class="k">RUN</span> apt-get clean <span class="o">&amp;&amp;</span> rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*</code></pre></div>
+<p>Be sure to run the docker container with the correct VIRTUAL_HOST, LETSENCRYPT_HOST, and LETSENCRYPT_EMAIL environment variables like so:</p>
+<div class="highlight"><pre><code class="language-sh" data-lang="sh">sudo docker run --name my-app -v /home/ubuntu/my-app -e <span class="nv">VIRTUAL_HOST</span><span class="o">=</span><span class="s2">&quot;my-app.com&quot;</span> -e <span class="nv">LETSENCRYPT_HOST</span><span class="o">=</span><span class="s2">&quot;my-app.com&quot;</span> -e <span class="nv">LETSENCRYPT_EMAIL</span><span class="o">=</span><span class="s2">&quot;me@example.com&quot;</span> --link postgres:postgres -d my-app</code></pre></div>
+<p>The <code>-v /home/ubuntu/my-app</code> will allow the app folder to persist in a volume container so you can restart the container after updates without losing changes.</p>
+    <aside class="share">
+      <span>Share this: </span>
+      <a href="http://twitter.com/share?text=Multiple SSL Rails apps on one VPS with Docker and Letsencrypt&amp;url=http://websitedev.xyz/multiple-ssl-rails-apps-on-one-vps-with-docker-letsencrypt&amp;hashtags=web,dev,blog,soudev&amp;via=nandomoreirame"
+      onclick="window.open(this.href, 'twitter-share', 'width=550,height=235');return false;">
+        <i class="icon icon-twitter-rounded"></i>
+      </a>
+      <a href="https://www.facebook.com/sharer/sharer.php?u=http://websitedev.xyz/multiple-ssl-rails-apps-on-one-vps-with-docker-letsencrypt"
+      onclick="window.open(this.href, 'facebook-share','width=580,height=296');return false;">
+        <i class="icon icon-facebook-rounded"></i>
+      </a>
+    </aside>
+  </div>
+  <hr>
+  <aside id="comments" class="disqus">
+    <div class="container">
+      <h3><i class="icon icon-comments-o"></i> Comments</h3>
+      <div id="disqus_thread"></div>
+      <script type="text/javascript">
+        var disqus_shortname = 'websitedevxyz';
+        var disqus_identifier = '/multiple-ssl-rails-apps-on-one-vps-with-docker';
+        var disqus_title = 'Multiple SSL Rails apps on one VPS with Docker and Letsencrypt';
+        var disqus_url = 'http://websitedev.xyz';
+        /*var disqus_developer = 1;*/
+        (function() {
+            var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+      </script>
+      <noscript>
+        Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a>
+      </noscript>
+    </div>
+  </aside>
+</article>
+        </section>
+<div class="clearfix"></div>
+<footer class="site-footer txt-center">
+  <hr>
+  <ul class="social">
+  </ul>
+  <small>&copy; 2016 websitedev.xyz All rights reserved.</small>
+</footer>
+    </main>
+    <a href="http://github.com/sitecoxyz/websitedev.xyz" target="_blank" class="github-corner"><svg width="80" height="80" viewBox="0 0 250 250" style="fill:#000; color:#fff; position: absolute; top: 0; border: 0; right: 0;"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
+    <script src="/js/jquery.min.js"></script>
+    <script src="/js/jekyll-search.min.js"></script>
+    <script src="/js/main.js"></script>
+  </body>
+</html>
