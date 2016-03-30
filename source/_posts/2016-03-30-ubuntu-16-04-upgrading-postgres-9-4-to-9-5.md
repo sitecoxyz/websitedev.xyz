@@ -2,7 +2,7 @@
 layout: post
 title: "Upgrading from Postgres 9.4 to 9.5 when upgrading to Ubuntu 16.04 Xenial Xerus"
 permalink: ubuntu-16-04-upgrading-postgres-9-4-to-9-5
-date: 2016-03-30 13:47:53
+date: 2016-03-30 13:27:53
 comments: true
 description: "How to move databases from postgres 9.4 to 9.5 when upgrading to Ubuntu 16.04 Xenial Xerus"
 keywords: ""
